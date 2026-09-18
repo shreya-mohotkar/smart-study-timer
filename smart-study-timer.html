@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Study Timer</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        header {
+            background: #4f46e5;
+            color: white;
+            padding: 22px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin-bottom: 6px;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 1100px;
+            margin: 25px auto;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            margin-bottom: 15px;
+            color: #3730a3;
+        }
+
+        .timer {
+            text-align: center;
+        }
+
+        #timerDisplay {
+            font-size: 65px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #4f46e5;
+        }
+
+        button {
+            border: none;
+            padding: 12px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            margin: 5px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.03);
+        }
+
+        .primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            margin: 8px 0 14px;
+            font-size: 15px;
+        }
+
+        .progress-container {
+            background: #e2e8f0;
+            height: 16px;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #4f46e5;
+            transition: width 0.5s;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .stat {
+            background: #eef2ff;
+            padding: 14px;
+            border-radius: 12px;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 24px;
+            color: #4f46e5;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 14px;
+            background: #ecfdf5;
+            color: #047857;
+            border-radius: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 13px;
+        }
+
+        .mode {
+            font-weight: bold;
+            color: #64748b;
+        }
+
+        .recommendation {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            #timerDisplay {
+                font-size: 48px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🧠 Smart Study Timer</h1>
+    <p>Study smarter • Avoid fatigue • Achieve your goals</p>
+</header>
+
+<div class="container">
+
+    <div class="dashboard">
+
+        <!-- Weekly Goal -->
+        <div class="card">
+            <h2>🎯 Weekly Goal</h2>
+
+            <label>Study goal (hours)</label>
+            <input type="number" id="weeklyGoal" min="1" value="10">
+
+            <button class="primary" onclick="saveGoal()">Set Weekly Goal</button>
+
+            <p>
+                Goal:
+                <strong><span id="goalText">10</span> hours</strong>
+            </p>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="weeklyProgress"></div>
+            </div>
+
+            <p id="weeklyPercent">0% completed</p>
+        </div>
+
+
+        <!-- Intelligent Timer -->
+        <div class="card timer">
+            <h2>⏱ Intelligent Session Timer</h2>
+
+            <p class="mode" id="modeText">Study Session</p>
+
+            <div id="timerDisplay">25:00</div>
+
+            <button class="primary" onclick="startTimer()">▶ Start</button>
+            <button class="secondary" onclick="pauseTimer()">⏸ Pause</button>
+            <button class="danger" onclick="resetTimer()">↺ Reset</button>
+
+            <div class="recommendation" id="recommendation">
+                💡 Start with a focused 25-minute session.
+            </div>
+        </div>
+
+
+        <!-- Stats -->
+        <div class="card">
+            <h2>📊 Your Progress</h2>
+
+            <div class="stats">
+
+                <div class="stat">
+                    <strong id="totalMinutes">0</strong>
+                    Minutes
+                </div>
+
+                <div class="stat">
+                    <strong id="sessions">0</strong>
+                    Sessions
+                </div>
+
+                <div class="stat">
+                    <strong id="streak">0</strong>
+                    Streak
+                </div>
+
+            </div>
+
+            <br>
+
+            <p>⭐ XP: <strong id="xp">0</strong></p>
+            <p>🏆 Level: <strong id="level">1</strong></p>
+        </div>
+
+
+        <!-- Positive Reinforcement -->
+        <div class="card">
+            <h2>🌟 Positive Reinforcement</h2>
+
+            <div class="message" id="motivation">
+                Every focused session is a step toward your goal! 🚀
+            </div>
+
+            <br>
+
+            <h3>Achievements</h3>
+
+            <div id="badges">
+                <span class="badge">🌱 Beginner</span>
+            </div>
+        </div>
+
+
+        <!-- Intelligent Study Settings -->
+        <div class="card">
+            <h2>⚙️ Smart Study Settings</h2>
+
+            <label>Current energy level</label>
+
+            <select id="energyLevel" onchange="updateRecommendation()">
+                <option value="high">High 🔥</option>
+                <option value="medium" selected>Medium 🙂</option>
+                <option value="low">Low 😴</option>
+            </select>
+
+            <p id="smartSuggestion">
+                Recommended session: 25 minutes.
+            </p>
+        </div>
+
+
+        <!-- Today's Goal -->
+        <div class="card">
+            <h2>📅 Today's Progress</h2>
+
+            <p>Today's study time:</p>
+            <h2><span id="todayMinutes">0</span> minutes</h2>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="dailyProgress"></div>
+            </div>
+
+            <p id="dailyMessage">
+                Start your first session today!
+            </p>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+
+    // -----------------------------
+    // DATA STORAGE
+    // -----------------------------
+
+    let data = JSON.parse(localStorage.getItem("smartStudyData")) || {
+
+        weeklyGoal: 10,
+        totalMinutes: 0,
+        todayMinutes: 0,
+        sessions: 0,
+        streak: 0,
+        xp: 0,
+        lastStudyDate: null
+
+    };
+
+    let timerInterval = null;
+
+    let remainingSeconds = 25 * 60;
+
+    let isRunning = false;
+
+    let currentMode = "study";
+
+
+    // -----------------------------
+    // INITIALIZE
+    // -----------------------------
+
+    function initialize() {
+
+        document.getElementById("weeklyGoal").value =
+            data.weeklyGoal;
+
+        updateUI();
+
+        updateRecommendation();
+
+    }
+
+
+    // -----------------------------
+    // SAVE DATA
+    // -----------------------------
+
+    function saveData() {
+
+        localStorage.setItem(
+            "smartStudyData",
+            JSON.stringify(data)
+        );
+
+    }
+
+
+    // -----------------------------
+    // WEEKLY GOAL
+    // -----------------------------
+
+    function saveGoal() {
+
+        let goal =
+            Number(document.getElementById("weeklyGoal").value);
+
+        if (goal < 1) {
+            alert("Please enter a valid goal.");
+            return;
+        }
+
+        data.weeklyGoal = goal;
+
+        saveData();
+
+        updateUI();
+
+        document.getElementById("motivation").innerText =
+            `🎯 New goal set! You can achieve ${goal} hours this week!`;
+
+    }
+
+
+    // -----------------------------
+    // TIMER
+    // -----------------------------
+
+    function startTimer() {
+
+        if (isRunning)
+            return;
+
+        isRunning = true;
+
+        timerInterval = setInterval(() => {
+
+            remainingSeconds--;
+
+            updateTimerDisplay();
+
+            if (remainingSeconds <= 0) {
+
+                clearInterval(timerInterval);
+
+                isRunning = false;
+
+                sessionCompleted();
+
+            }
+
+        }, 1000);
+
+    }
+
+
+    function pauseTimer() {
+
+        clearInterval(timerInterval);
+
+        isRunning = false;
+
+    }
+
+
+    function resetTimer() {
+
+        clearInterval(timerInterval);
+
+        isRunning = false;
+
+        currentMode = "study";
+
+        remainingSeconds = getRecommendedSession() * 60;
+
+        document.getElementById("modeText").innerText =
+            "Study Session";
+
+        updateTimerDisplay();
+
+    }
+
+
+    function updateTimerDisplay() {
+
+        let minutes =
+            Math.floor(remainingSeconds / 60);
+
+        let seconds =
+            remainingSeconds % 60;
+
+        document.getElementById("timerDisplay").innerText =
+            `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+
+    }
+
+
+    // -----------------------------
+    // INTELLIGENT SESSION LOGIC
+    // -----------------------------
+
+    function getRecommendedSession() {
+
+        let energy =
+            document.getElementById("energyLevel").value;
+
+        let sessionLength;
+
+        if (energy === "high") {
+
+            sessionLength = 30;
+
+        } else if (energy === "medium") {
+
+            sessionLength = 25;
+
+        } else {
+
+            sessionLength = 20;
+
+        }
+
+        // Prevent fatigue after many sessions
+        if (data.sessions > 0 && data.sessions % 4 === 0) {
+
+            sessionLength = 15;
+
+        }
+
+        return sessionLength;
+
+    }
+
+
+    function updateRecommendation() {
+
+        let energy =
+            document.getElementById("energyLevel").value;
+
+        let duration =
+            getRecommendedSession();
+
+        let message = "";
+
+        if (energy === "high") {
+
+            message =
+                `🔥 High energy! Try a ${duration}-minute deep-focus session.`;
+
+        } else if (energy === "medium") {
+
+            message =
+                `🙂 Balanced energy. Try a ${duration}-minute focused session.`;
+
+        } else {
+
+            message =
+                `😴 Low energy detected. Try a gentle ${duration}-minute session and take a proper break.`;
+
+        }
+
+        if (data.sessions > 0 && data.sessions % 4 === 0) {
+
+            message +=
+                " 🧘 You've completed several sessions, so a longer recovery break is recommended.";
+
+        }
+
+        document.getElementById("smartSuggestion").innerText =
+            message;
+
+        document.getElementById("recommendation").innerText =
+            "💡 " + message;
+
+        if (!isRunning) {
+
+            remainingSeconds = duration * 60;
+
+            updateTimerDisplay();
+
+        }
+
+    }
+
+
+    // -----------------------------
+    // SESSION COMPLETION
+    // -----------------------------
+
+    function sessionCompleted() {
+
+        if (currentMode === "study") {
+
+            let studiedMinutes =
+                getRecommendedSession();
+
+            data.totalMinutes += studiedMinutes;
+
+            data.todayMinutes += studiedMinutes;
+
+            data.sessions++;
+
+            data.xp += studiedMinutes;
+
+            updateStreak();
+
+            givePositiveReinforcement();
+
+            updateUI();
+
+            // Smart break length
+            let breakMinutes;
+
+            if (data.sessions % 4 === 0) {
+
+                breakMinutes = 15;
+
+            } else {
+
+                breakMinutes = 5;
+
+            }
+
+            currentMode = "break";
+
+            remainingSeconds =
+                breakMinutes * 60;
+
+            document.getElementById("modeText").innerText =
+                `☕ Break Time (${breakMinutes} min)`;
+
+            updateTimerDisplay();
+
+            document.getElementById("motivation").innerText =
+                `🎉 Great work! You completed a ${studiedMinutes}-minute study session. Take your break!`;
+
+        } else {
+
+            currentMode = "study";
+
+            remainingSeconds =
+                getRecommendedSession() * 60;
+
+            document.getElementById("modeText").innerText =
+                "Study Session";
+
+            updateTimerDisplay();
+
+            document.getElementById("motivation").innerText =
+                "🚀 Break finished! Ready for another focused session?";
+
+        }
+
+        saveData();
+
+    }
+
+
+    // -----------------------------
+    // STREAK SYSTEM
+    // -----------------------------
+
+    function updateStreak() {
+
+        let today =
+            new Date().toDateString();
+
+        if (data.lastStudyDate !== today) {
+
+            data.streak++;
+
+            data.lastStudyDate = today;
+
+        }
+
+    }
+
+
+    // -----------------------------
+    // POSITIVE REINFORCEMENT
+    // -----------------------------
+
+    function givePositiveReinforcement() {
+
+        let messages = [
+
+            "🌟 Amazing! Your consistency is building a strong habit.",
+
+            "🚀 One session closer to your weekly goal!",
+
+            "🧠 Great focus! You're training your brain to concentrate better.",
+
+            "🔥 Keep going! Small progress creates big results.",
+
+            "👏 Well done! You showed up and completed another session."
+
+        ];
+
+        let randomMessage =
+            messages[Math.floor(Math.random() * messages.length)];
+
+        document.getElementById("motivation").innerText =
+            randomMessage;
+
+    }
+
+
+    // -----------------------------
+    // UPDATE UI
+    // -----------------------------
+
+    function updateUI() {
+
+        document.getElementById("goalText").innerText =
+            data.weeklyGoal;
+
+        document.getElementById("totalMinutes").innerText =
+            data.totalMinutes;
+
+        document.getElementById("todayMinutes").innerText =
+            data.todayMinutes;
+
+        document.getElementById("sessions").innerText =
+            data.sessions;
+
+        document.getElementById("streak").innerText =
+            data.streak;
+
+        document.getElementById("xp").innerText =
+            data.xp;
+
+        let level =
+            Math.floor(data.xp / 100) + 1;
+
+        document.getElementById("level").innerText =
+            level;
+
+
+        // Weekly progress
+
+        let weeklyMinutes =
+            data.weeklyGoal * 60;
+
+        let weeklyPercentage =
+            Math.min(
+                (data.totalMinutes / weeklyMinutes) * 100,
+                100
+            );
+
+        document.getElementById("weeklyProgress").style.width =
+            weeklyPercentage + "%";
+
+        document.getElementById("weeklyPercent").innerText =
+            `${Math.round(weeklyPercentage)}% completed`;
+
+
+        // Daily progress
+        // Target = 1/7 of weekly goal
+
+        let dailyTarget =
+            (data.weeklyGoal * 60) / 7;
+
+        let dailyPercentage =
+            Math.min(
+                (data.todayMinutes / dailyTarget) * 100,
+                100
+            );
+
+        document.getElementById("dailyProgress").style.width =
+            dailyPercentage + "%";
+
+
+        if (dailyPercentage >= 100) {
+
+            document.getElementById("dailyMessage").innerText =
+                "🏆 Daily goal achieved! Excellent work!";
+
+        } else {
+
+            document.getElementById("dailyMessage").innerText =
+                `${Math.round(dailyPercentage)}% of today's target completed.`;
+
+        }
+
+        updateBadges();
+
+    }
+
+
+    // -----------------------------
+    // ACHIEVEMENT SYSTEM
+    // -----------------------------
+
+    function updateBadges() {
+
+        let badgeHTML =
+            `<span class="badge">🌱 Beginner</span>`;
+
+        if (data.sessions >= 5) {
+
+            badgeHTML +=
+                `<span class="badge">🔥 5 Sessions</span>`;
+
+        }
+
+        if (data.sessions >= 10) {
+
+            badgeHTML +=
+                `<span class="badge">🚀 Focus Master</span>`;
+
+        }
+
+        if (data.streak >= 3) {
+
+            badgeHTML +=
+                `<span class="badge">📅 3-Day Streak</span>`;
+
+        }
+
+        if (data.totalMinutes >= 300) {
+
+            badgeHTML +=
+                `<span class="badge">🏆 5 Hour Scholar</span>`;
+
+        }
+
+        document.getElementById("badges").innerHTML =
+            badgeHTML;
+
+    }
+
+
+    // -----------------------------
+    // START APPLICATION
+    // -----------------------------
+
+    initialize();
+
+</script>
+
+</body>
+</html>
